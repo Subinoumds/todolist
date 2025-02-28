@@ -1,30 +1,33 @@
+version: '3.8'
+
 services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
 
   backend:
     build: ./backend
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT}:3000"
     environment:
-      - PGUSER=postgres
-      - PGHOST=db
-      - PGDATABASE=todo
-      - PGPASSWORD=password
-      - PGPORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       - db
 
   db:
     image: postgres:13
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: todo
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

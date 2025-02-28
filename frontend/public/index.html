@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do List</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Ma To-Do List</h1>
@@ -11,27 +12,96 @@
         <input type="text" id="taskInput" placeholder="Nouvelle tâche" required>
         <button type="submit">Ajouter</button>
     </form>
+    <div>
+        <button onclick="fetchTasks('all')">Toutes</button>
+        <button onclick="fetchTasks('active')">Actives</button>
+        <button onclick="fetchTasks('completed')">Terminées</button>
+    </div>
     <ul id="taskList"></ul>
 
     <script>
-        async function fetchTasks() {
-            const response = await fetch('http://localhost:3000/tasks');
-            const tasks = await response.json();
-            const taskList = document.getElementById('taskList');
-            taskList.innerHTML = tasks.map(task => `<li>${task.description}</li>`).join('');
+        async function fetchTasks(filter = 'all') {
+            try {
+                const response = await fetch(`http://localhost:3000/tasks?filter=${filter}`);
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la récupération des tâches');
+                }
+                const tasks = await response.json();
+                const taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+
+                tasks.forEach(task => {
+                    const li = document.createElement('li');
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.completed || false;
+                    checkbox.onchange = () => updateTask(task.id, checkbox.checked);
+
+                    const taskDescription = document.createElement('span');
+                    taskDescription.textContent = task.description;
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Supprimer';
+                    deleteButton.onclick = () => deleteTask(task.id);
+
+                    li.appendChild(checkbox);
+                    li.appendChild(taskDescription);
+                    li.appendChild(deleteButton);
+                    taskList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
         }
 
         document.getElementById('taskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const taskInput = document.getElementById('taskInput');
-            await fetch('http://localhost:3000/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description: taskInput.value })
-            });
-            taskInput.value = '';
-            fetchTasks();
+            try {
+                const response = await fetch('http://localhost:3000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: taskInput.value })
+                });
+                if (!response.ok) {
+                    throw new Error('Erreur lors de l\'ajout de la tâche');
+                }
+                taskInput.value = '';
+                fetchTasks();
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
         });
+
+        async function deleteTask(id) {
+            try {
+                const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+                    method: 'DELETE',
+                });
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la suppression de la tâche');
+                }
+                fetchTasks();
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function updateTask(id, completed) {
+            try {
+                const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completed }),
+                });
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la mise à jour de la tâche');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
 
         fetchTasks();
     </script>

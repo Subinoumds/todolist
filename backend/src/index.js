@@ -1,26 +1,34 @@
+require('dotenv').config(); // Charge les variables d'environnement
 const express = require('express');
 const { Pool } = require('pg');
-const cors = require('cors'); // Importe le middleware CORS
+const cors = require('cors');
 const app = express();
-const port = 3000;
+
+const port = process.env.BACKEND_PORT || 3000;
 
 const pool = new Pool({
-    user: 'postgres',
-    host: 'db',
-    database: 'todo',
-    password: 'password',
-    port: 5432,
+    user: process.env.POSTGRES_USER,
+    host: process.env.POSTGRES_HOST,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: process.env.POSTGRES_PORT,
 });
 
+// Active CORS pour toutes les routes
 app.use(cors({
-    origin: 'http://localhost:8080', 
-    methods: ['GET', 'POST', 'DELETE', 'PUT'], 
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'DELETE', 'PATCH'],
 }));
 
 app.use(express.json());
 
+// Routes (reste du code inchangé)
 app.get('/tasks', async (req, res) => {
-    const { rows } = await pool.query('SELECT * FROM tasks');
+    const { filter } = req.query;
+    let query = 'SELECT * FROM tasks';
+    if (filter === 'active') query += ' WHERE completed = false';
+    if (filter === 'completed') query += ' WHERE completed = true';
+    const { rows } = await pool.query(query);
     res.json(rows);
 });
 
@@ -32,13 +40,15 @@ app.post('/tasks', async (req, res) => {
 
 app.delete('/tasks/:id', async (req, res) => {
     const { id } = req.params;
-    try {
-        await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
-        res.status(204).send(); // 204 = No Content (succès sans retour de données)
-    } catch (error) {
-        console.error('Erreur lors de la suppression de la tâche:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
+    await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
+    res.status(204).send();
+});
+
+app.patch('/tasks/:id', async (req, res) => {
+    const { id } = req.params;
+    const { completed } = req.body;
+    await pool.query('UPDATE tasks SET completed = $1 WHERE id = $2', [completed, id]);
+    res.status(200).send();
 });
 
 app.listen(port, () => {
