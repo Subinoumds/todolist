@@ -1,0 +1,32 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PGUSER=postgres
+      - PGHOST=db
+      - PGDATABASE=todo
+      - PGPASSWORD=password
+      - PGPORT=5432
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: todo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
