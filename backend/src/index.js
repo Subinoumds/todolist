@@ -1,4 +1,4 @@
-require('dotenv').config(); // Charge les variables d'environnement
+require('dotenv').config(); 
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -14,7 +14,6 @@ const pool = new Pool({
     port: process.env.POSTGRES_PORT,
 });
 
-// Active CORS pour toutes les routes
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
@@ -22,7 +21,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Routes (reste du code inchangé)
 app.get('/tasks', async (req, res) => {
     const { filter } = req.query;
     let query = 'SELECT * FROM tasks';
