@@ -15,8 +15,9 @@ const pool = new Pool({
 });
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL.replace(/\/$/, ''),
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type']
 }));
 
 app.use(express.json());
